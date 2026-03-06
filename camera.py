@@ -6,7 +6,7 @@ import numpy as np
 # init and live feed helped by claude
 
 class Camera:
-    def __init__(self, index=0, backend=cv2.CAP_DSHOW):
+    def __init__(self, index=1, backend=cv2.CAP_DSHOW):
         self.cap = cv2.VideoCapture(index, backend)
         # self.camera = Camera3D(
         #     mode='RGB&DEPTH',
@@ -29,22 +29,22 @@ class Camera:
         
         print("Camera initialized.")
 
-    # def live_feed(self):
+    def live_feed(self):
         
-    #     while True:
+        while True:
            
 
-    #         # Read a frame from the camera
-    #         ret, frame = self.cap.read()
+            # Read a frame from the camera
+            ret, frame = self.cap.read()
 
-    #         #display if succesfully read
-    #         if ret:
-    #             cv2.imshow('Live Feed', frame)
+            #display if succesfully read
+            if ret:
+                cv2.imshow('Live Feed', frame)
 
            
-    #         # Exit on 'q' key press
-    #         if cv2.waitKey(1) & 0xFF == ord('q'):
-    #             break
+            # Exit on 'q' key press
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
     # def live_RGB(self, color):
     
     
@@ -329,4 +329,6 @@ class Camera:
                     cv2.destroyAllWindows()
                     break
                 
-        
+if __name__ == "__main__":
+    cam = Camera()
+    cam.live_feed()
