@@ -1,28 +1,30 @@
 import cv2
 from matplotlib.pyplot import gray
 import numpy as np
-# from pal.utilities.vision import Camera3D
+from pal.utilities.vision import Camera3D
 # import pyrealsense2 as rs
 # init and live feed helped by claude
 
 class Camera:
     def __init__(self, index=1, backend=cv2.CAP_DSHOW):
         self.cap = cv2.VideoCapture(index, backend)
-        # self.camera = Camera3D(
-        #     mode='RGB&DEPTH',
-        #     frameWidthRGB=640,
-        #     frameHeightRGB=480,
-        #     frameWidthDepth=640,
-        #     frameHeightDepth=480,
-        #     deviceId='0',
-        #     readMode=0
-        # )
+        self.camera = Camera3D(
+            mode='RGB&DEPTH',
+            frameWidthRGB=640,
+            frameHeightRGB=480,
+            frameWidthDepth=640,
+            frameHeightDepth=480,
+            deviceId='0',
+            readMode=0
+        )
         self.lower_red=np.array([0, 120, 70])
         self.upper_red=np.array([10, 255, 255])
         self.lower_white = np.array([0, 0, 200])
         self.upper_white = np.array([180, 30, 255])
-        self.lower_blue=np.array([100, 100, 20])
-        self.upper_blue=np.array([130, 255, 255])
+        self.lower_grey = np.array([88, 5, 115])
+        self.upper_grey = np.array([108, 30, 145])
+        self.lower_blue=np.array([82, 100, 100])
+        self.upper_blue=np.array([112, 255, 255])
         self.lower_green=np.array([40, 50, 50])
         self.upper_green=np.array([80, 255, 255])
         self.hsv=None
@@ -105,12 +107,16 @@ class Camera:
                     elif color == 'blue':
                         self.lower_blue=np.array([self.hsv[240][320][0] -15, 100, 20])
                         self.upper_blue=np.array([self.hsv[240][320][0] +15, 255, 255])
-                        
+                        print(f" lower green{self.lower_blue}")
+                        print(f" upper green{self.upper_blue}")
                     elif color == 'green':
                         self.lower_green=np.array([self.hsv[240][320][0] -4, 100, 20])
                         self.upper_green=np.array([self.hsv[240][320][0] +4, 255, 255])
-                        print(f" lower green{self.lower_green}")
-                        print(f" upper green{self.upper_green}")
+                    elif color == 'grey':
+                        self.lower_grey=np.array([self.hsv[240][320][0] -2, 100, 20])
+                        self.upper_grey=np.array([self.hsv[240][320][0] +2, 255, 255])
+                        print(f" lower green{self.lower_grey}")
+                        print(f" upper green{self.upper_grey}")
                     print('recorded')
                     
                 if key == ord('q'):
@@ -123,71 +129,80 @@ class Camera:
     
    
    
-    def get_depth_centroid(self,centroid_frame,color):
-        '''
-        Gets the depth of a list of centroids from objects of a specific color from a given frame
+    # def get_depth_centroid(self,centroid_frame,color):
+    #     '''
+    #     Gets the depth of a list of centroids from objects of a specific color from a given frame
         
-        Parameters:
-            color (String): color of object user wants ('green', 'red', 'blue')
-            centroid_frame (numpy array): the given frame from cap.read()
+    #     Parameters:
+    #         color (String): color of object user wants ('green', 'red', 'blue')
+    #         centroid_frame (numpy array): the given frame from cap.read()
             
-        Returns:
-            centroid_depth_arr: a list of Z-coordinates for the centroids detected'''
+    #     Returns:
+    #         centroid_depth_arr: a list of Z-coordinates for the centroids detected'''
         
-        self.camera.read_depth(dataMode = 'M')
-        depth_array = self.camera.imageBufferDepthM
-        centroid_depth_arr = []
-        centroid = self.create_centroid(centroid_frame,color)
-        for (cx,cy) in centroid:
-            depth_centroid = self.get_stable_depth_data(cx,cy, depth_array)
-            centroid_depth_arr.append(depth_centroid)
+    #     self.camera.read_depth(dataMode = 'M')
+    #     depth_array = self.camera.imageBufferDepthM
+    #     centroid_depth_arr = []
+    #     centroid = self.create_centroid(centroid_frame,color)
+    #     for (cx,cy) in centroid:
+    #         depth_centroid = self.get_stable_depth_data(cx,cy, depth_array)
+    #         centroid_depth_arr.append(depth_centroid)
 
-        return centroid_depth_arr
+    #     return centroid_depth_arr
     
-    def get_stable_dept_data(self,cx,cy, depth_frame):
-        '''
-        Gets and returns the depth of an array of coordinates. It averages the data in
-        a given range and takes out bad data
+    # def get_stable_dept_data(self,cx,cy, depth_frame):
+    #     '''
+    #     Gets and returns the depth of an array of coordinates. It averages the data in
+    #     a given range and takes out bad data
         
-        Parameters:
-            cx: The x-coordinate of the centroid
-            cy: teh y-coordinate of the centroid
-            depth_frame: An array of depth data for the given camera frame and resolution
+    #     Parameters:
+    #         cx: The x-coordinate of the centroid
+    #         cy: teh y-coordinate of the centroid
+    #         depth_frame: An array of depth data for the given camera frame and resolution
         
-        Returns:
-            depth: A double of the depth in meters'''
+    #     Returns:
+    #         depth: A double of the depth in meters'''
         
-        valid_readings = []
-        depth = 0.0
-        window = 5
+    #     valid_readings = []
+    #     depth = 0.0
+    #     window = 5
 
-        for i in range (-window,window+1):
-            for j in range(-window, window+1):
-                x = cx + i
-                y = cy + j
+    #     for i in range (-window,window+1):
+    #         for j in range(-window, window+1):
+    #             x = cx + i
+    #             y = cy + j
                 
-                if 0 <= x < depth_frame.shape[1] and 0 <= y < depth_frame.shape[0]:
-                    d = depth_frame[y,x]
+    #             if 0 <= x < depth_frame.shape[1] and 0 <= y < depth_frame.shape[0]:
+    #                 d = depth_frame[y,x]
 
-                    if d > 0:
-                        valid_readings.append(d)
-        average = float(np.median(valid_readings))
-        if valid_readings:
-            depth = average
-        return depth
+    #                 if d > 0:
+    #                     valid_readings.append(d)
+    #     average = float(np.median(valid_readings))
+    #     if valid_readings:
+    #         depth = average
+    #     return depth
 
     
-    # def live_depth(self):
-    #     while True:
-    #         depth_frame = self.get_depth()
+    def get_depth_snapshot(self, save_path='depth_snapshot.png'):
+        depth_frame = self.get_depth().astype('float32')
 
-    #         depth_display = cv2.normalize(depth_frame, None, 0, 255, cv2.NORM_MINMAX)
-    #         depth_display = depth_display.astype('uint8')
+        valid_mask = depth_frame > 0
+        if valid_mask.any():
+            low = np.percentile(depth_frame[valid_mask], 5)
+            high = np.percentile(depth_frame[valid_mask], 95)
+            depth_frame = np.clip(depth_frame, low, high)
 
-    #         cv2.imshow('Depth Feed', depth_display)
-    #         if cv2.waitKey(1) & 0xFF == ord('q'):
-    #             break
+        depth_display = cv2.normalize(depth_frame, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
+        depth_display = cv2.medianBlur(depth_display, 3)
+        depth_display = cv2.bilateralFilter(depth_display, d=5, sigmaColor=50, sigmaSpace=50)
 
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        depth_display = clahe.apply(depth_display)
+
+        cv2.imwrite(save_path, depth_display)  # Save to disk
+        print(f"Snapshot saved to {save_path}")
+
+        return depth_display
 
     
     # def draw_outline(self):
@@ -258,6 +273,9 @@ class Camera:
         elif color == 'white':
                 self.uppercolor=self.upper_white
                 self.lowercolor=self.lower_white
+        elif color == 'grey':
+                self.uppercolor=self.upper_grey
+                self.lowercolor=self.lower_grey
         self.hsv=cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask=cv2.inRange(self.hsv, self.lowercolor, self.uppercolor)
         return mask

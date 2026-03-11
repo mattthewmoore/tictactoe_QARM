@@ -23,7 +23,7 @@ time.sleep(1)
 
 bot.myArm.terminate()
 
-cam.live_feed()
+cam.draw_contours('blue')
 
 
 
