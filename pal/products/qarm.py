@@ -113,7 +113,7 @@ class QArm():
         new=False
         for motorIndex in range(4):
             if self.mode[motorIndex]:
-                self.writeOtherBuffer[5+motorIndex] = np.zeros(1, dtype=np.float64)
+                self.writeOtherBuffer[5+motorIndex] = 0.0
             else:
                 self.writeOtherBuffer[motorIndex] = phiCMD[motorIndex]
 
