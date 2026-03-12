@@ -4,46 +4,19 @@ from quanser.hardware import MAX_STRING_LENGTH
 import numpy as np
 import time
 
-# ==========================================================
-# 1. MANUAL CALIBRATION DATA
-# ==========================================================
-# [X, Y, Z] coordinates in meters. 
-# Move the arm to each cell manually to find these exact values.
-z_loc_h12 = 0.06
-
-z_loc_h345 = z_loc_h12
-
-z_loc_a = 0.07
-z_loc_b = 0.055
-z_loc_c = 0.1
-
-x_loc_b = .41
-
-LOCATIONS = {
-     'A1': [0.285, -0.1618, z_loc_a], 'A2': [0.2843, -0.0158, z_loc_a], 'A3': [0.2843, 0.16, z_loc_a],
-     'B1': [x_loc_b, -0.1618, z_loc_b], 'B2': [x_loc_b, -0.0158, z_loc_b], 'B3': [x_loc_b, 0.1393, z_loc_b],
-     'C1': [0.53, -0.1618, z_loc_c], 'C2': [0.53, -0.0158, z_loc_c], 'C3': [0.5, 0.1393, z_loc_c],
-     'HOME': [0.45, 0.0, 0.49], 'CAM_PHI_POS':[-0.05, -0.15, 0.5, 0.0], 
-     'H1': [0.0, -0.2413, z_loc_h12], 'H2': [0.1270, -0.2413, z_loc_h12], 'H3': [0.0, -0.3810, z_loc_h345],
-     'H4': [0.127, -0.381, z_loc_h345], 'H5': [0.2540, -0.3810, z_loc_h345],
-     'C3_PHI': [ 0.2432,  0.6897,  0.0330,  -1.0], 'C2_PHI' : [-0.0100,  0.6989,  0.0207,  -1.0],
-     'C1_PHI': [-0.3000,  0.7096,  0.0269,  1.0]
- }
-
-STAGING_AREA = [0.100, -0.150, 0.025] # Where the robot's pieces are kept
-Z_HOVER = 0.120                       # Safe height to travel over pieces
 
 # ==========================================================
-# 2. ROBOT CONTROL CLASS
+#  ROBOT CONTROL CLASS
 # ==========================================================
 class QArmTicTacToe:
     """Control-only interface for commanding the QArm from other files."""
 
-    def __init__(self):
+    def __init__(self,Location_Dict):
         self.myArm = QArm(hardware=1)
         self.myUtils = QArmUtilities()
         self.sampleTime = 1/200
         self._saved_gripper_cmd = 0.5
+        self.LOCATIONS = Location_Dict
         print("QArm Initialized and Ready.")
 
     def _set_mode(self, mode):
@@ -98,8 +71,8 @@ class QArmTicTacToe:
         
         while time.time() - start_time < duration:
             loop_start = time.time()
-            # LED Green (0,1,0) while moving
-            self.myArm.read_write_std(phiCMD=phi_cmd, grpCMD=grip_cmd, baseLED=[0, 1, 0])
+            # LED Blue (0,0,1) while moving
+            self.myArm.read_write_std(phiCMD=phi_cmd, grpCMD=grip_cmd, baseLED=[0, 0, 1])
             # Maintain 200Hz loop
             time.sleep(self.sampleTime - (time.time() - loop_start) % self.sampleTime)
 
@@ -113,16 +86,16 @@ class QArmTicTacToe:
 
         while time.time() - start_time < duration:
             loop_start = time.time()
-            # LED Cyan (0,1,1) while moving in joint space
-            self.myArm.read_write_std(phiCMD=phi_cmd, grpCMD=grip_cmd, baseLED=[0, 1, 1])
+            # LED Blue (0,0,1) while moving in joint space
+            self.myArm.read_write_std(phiCMD=phi_cmd, grpCMD=grip_cmd, baseLED=[0, 0, 1])
             # Maintain 200Hz loop
             time.sleep(self.sampleTime - (time.time() - loop_start) % self.sampleTime)
 
     def move_to_cell(self, cell_key, grip_cmd, duration=2.0):
-        """Moves to a named board location from LOCATIONS."""
-        if cell_key not in LOCATIONS:
+        """Moves to a named board location from self.LOCATIONS."""
+        if cell_key not in self.LOCATIONS:
             raise KeyError(f"Unknown cell key: {cell_key}")
-        self.move_to_xyz(LOCATIONS[cell_key], grip_cmd, duration)
+        self.move_to_xyz(self.LOCATIONS[cell_key], grip_cmd, duration)
 
     def read_phi(self):
         """Returns the current measured joint angles [phi1, phi2, phi3, phi4]."""
@@ -135,7 +108,7 @@ class QArmTicTacToe:
         return list(xyz)
 
     def home(self, grip_cmd=0, duration=2.0):
-        """Moves to the HOME point defined in LOCATIONS."""
+        """Moves to the HOME point defined in self.LOCATIONS."""
         self.move_to_cell('HOME', grip_cmd, duration)
 
     def set_gripper(self, grip_cmd, duration=0.5):
@@ -144,11 +117,11 @@ class QArmTicTacToe:
         phi_cmd = self.myArm.measJointPosition[0:4]
         while time.time() - start_time < duration:
             loop_start = time.time()
-            self.myArm.read_write_std(phiCMD=phi_cmd, grpCMD=grip_cmd, baseLED=[0, 0, 1])
             time.sleep(self.sampleTime - (time.time() - loop_start) % self.sampleTime)
 
     def terminate(self):
         """Releases QArm hardware resources."""
+        # LED green (0,0,1) while done
         self.myArm.terminate()
 
 
@@ -157,7 +130,7 @@ class QArmTicTacToe:
 
         grip_cmd_head = 0.7 # Closed gripper command
 
-        if h_key not in LOCATIONS:
+        if h_key not in self.LOCATIONS:
             raise KeyError(f"Unknown cell key: {h_key}")    
         
         #Pickup piece and go to home position
@@ -174,7 +147,7 @@ class QArmTicTacToe:
             self.move_to_phi([-1.45,0.0,1.25,0.0], grip_cmd=0, duration=3.0)
 
             #Move to staging area above piece
-            self.move_to_xyz(LOCATIONS[h_key], grip_cmd=0, duration=3.0)
+            self.move_to_xyz(self.LOCATIONS[h_key], grip_cmd=0, duration=3.0)
 
             #Close gripper to pick up piece
             self.set_gripper(grip_cmd=grip_cmd_head, duration=0.5)
@@ -187,7 +160,7 @@ class QArmTicTacToe:
             self.move_to_phi([-1.1,0.0,0.5,0.0], grip_cmd=0, duration=3.0)
 
             #Move to staging area above piece
-            self.move_to_xyz(LOCATIONS[h_key], grip_cmd=0, duration=3.0)
+            self.move_to_xyz(self.LOCATIONS[h_key], grip_cmd=0, duration=3.0)
 
             #Close gripper to pick up piece
             self.set_gripper(grip_cmd=grip_cmd_head, duration=0.5)
@@ -197,7 +170,7 @@ class QArmTicTacToe:
             self.move_to_phi([-1.0,0.0,0.5,0.0], grip_cmd=0, duration=3.0)
 
             #Move to staging area above piece
-            self.move_to_xyz(LOCATIONS[h_key], grip_cmd=0, duration=3.0)
+            self.move_to_xyz(self.LOCATIONS[h_key], grip_cmd=0, duration=3.0)
 
             #Close gripper to pick up piece
             self.set_gripper(grip_cmd=grip_cmd_head, duration=0.5)
@@ -206,7 +179,7 @@ class QArmTicTacToe:
             self.move_to_phi([-1.45,0.0,0.5,0.0], grip_cmd=grip_cmd_head, duration=3.0)
 
         #Return to home position with piece
-        self.move_to_xyz(LOCATIONS['HOME'], grip_cmd=grip_cmd_head, duration=3.0)
+        self.move_to_xyz(self.LOCATIONS['HOME'], grip_cmd=grip_cmd_head, duration=3.0)
 
     def place_H(self, position, grip_cmd_head=0.7):
         "Place H pieces in position with adjustments as needed for height and place in position"
@@ -216,7 +189,7 @@ class QArmTicTacToe:
             self.move_to_phi([0,-0.5,1.2,0.0], grip_cmd=grip_cmd_head, duration=3.0)
 
             #Move to target position with piece
-            self.move_to_xyz(LOCATIONS[position], grip_cmd=grip_cmd_head, duration=3.0)
+            self.move_to_xyz(self.LOCATIONS[position], grip_cmd=grip_cmd_head, duration=3.0)
 
             #Drop piece at target position
             self.set_gripper(grip_cmd=0, duration=0.5)
@@ -224,7 +197,7 @@ class QArmTicTacToe:
         elif 'B' in position:
 
             #Move to target position with piece
-            self.move_to_xyz(LOCATIONS[position], grip_cmd=grip_cmd_head, duration=3.0)
+            self.move_to_xyz(self.LOCATIONS[position], grip_cmd=grip_cmd_head, duration=3.0)
 
             #Drop piece at target position
             self.set_gripper(grip_cmd=0, duration=0.5)
@@ -236,10 +209,10 @@ class QArmTicTacToe:
             phi = 'C' + pos + '_PHI' #Get corresponding PHI key for C row
 
             #adjust place for C row with PHI adjustments
-            self.move_to_phi(LOCATIONS[phi], grip_cmd=grip_cmd_head, duration=3.0)
+            self.move_to_phi(self.LOCATIONS[phi], grip_cmd=grip_cmd_head, duration=3.0)
 
             #Move to target position with piece
-            self.move_to_xyz(LOCATIONS[position], grip_cmd=grip_cmd_head, duration=3.0)
+            self.move_to_xyz(self.LOCATIONS[position], grip_cmd=grip_cmd_head, duration=3.0)
 
             self.set_gripper(grip_cmd=0, duration=0.5)
 
