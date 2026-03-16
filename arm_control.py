@@ -18,24 +18,61 @@ class QArmTicTacToe:
         self._saved_gripper_cmd = 0.5
         self.LOCATIONS = Location_Dict
         print("QArm Initialized and Ready.")
+    ## Victory Dance ##
+    def victory_dance(self):
+        """Big exaggerated victory dance at the camera pose."""
+        open_grip = 0.0
+        closed_grip = 0.7
 
-    def _set_mode(self, mode):
-        """Set all joints to Position mode (0) or PWM mode (1)."""
-        mode = int(mode)
-        if mode not in (0, 1):
-            raise ValueError("mode must be 0 (position) or 1 (pwm)")
+        cam = list(self.LOCATIONS['CAM_PHI_POS'])
 
-        mode_arr = np.array([mode, mode, mode, mode, mode], dtype=np.uint8)
-        mode_options = (
-            f"j0_mode={mode};j1_mode={mode};j2_mode={mode};j3_mode={mode};gripper_mode={mode};"
-            "j0_profile_config=0;j0_profile_velocity=1.5708;j0_profile_acceleration=1.0472;"
-            "j1_profile_config=0;j1_profile_velocity=1.5708;j1_profile_acceleration=1.0472;"
-            "j2_profile_config=0;j2_profile_velocity=1.5708;j2_profile_acceleration=1.0472;"
-            "j3_profile_config=0;j3_profile_velocity=1.5708;j3_profile_acceleration=1.0472;"
-        )
+        # Start at camera pose
+        self.move_to_phi(cam, grip_cmd=open_grip, duration=1.0)
 
-        self.myArm.mode = mode_arr
-        self.myArm.card.set_card_specific_options(mode_options, MAX_STRING_LENGTH)
+        # Big exaggerated nodding:
+        # nod = mainly change phi2 and phi3 together
+        # phi3 is the "1.175" joint entry from CAM_PHI_POS
+        nod_down = [cam[0], -0.55, 0.72, 0.0]
+        nod_up   = [cam[0],  0.05, 1.25, 0.0]
+
+        # Do several big nods, not just one
+        for _ in range(3):
+            self.move_to_phi(nod_down, grip_cmd=open_grip, duration=0.45)
+            self.move_to_phi(nod_up,   grip_cmd=open_grip, duration=0.45)
+
+        # Add a side-to-side celebration after nodding
+        left_pose  = [-0.55, -0.10, 1.05, 0.0]
+        right_pose = [ 0.45, -0.10, 1.05, 0.0]
+
+        for _ in range(2):
+            self.move_to_phi(left_pose,  grip_cmd=open_grip, duration=0.40)
+            self.move_to_phi(right_pose, grip_cmd=open_grip, duration=0.40)
+
+        # Gripper celebration
+        for _ in range(3):
+            self.set_gripper(closed_grip, duration=0.30)
+            self.set_gripper(open_grip,   duration=0.30)
+
+        # Return to camera pose
+            self.move_to_phi(cam, grip_cmd=open_grip, duration=1.0)
+
+        def _set_mode(self, mode):
+            """Set all joints to Position mode (0) or PWM mode (1)."""
+            mode = int(mode)
+            if mode not in (0, 1):
+                raise ValueError("mode must be 0 (position) or 1 (pwm)")
+
+            mode_arr = np.array([mode, mode, mode, mode, mode], dtype=np.uint8)
+            mode_options = (
+                f"j0_mode={mode};j1_mode={mode};j2_mode={mode};j3_mode={mode};gripper_mode={mode};"
+                "j0_profile_config=0;j0_profile_velocity=1.5708;j0_profile_acceleration=1.0472;"
+                "j1_profile_config=0;j1_profile_velocity=1.5708;j1_profile_acceleration=1.0472;"
+                "j2_profile_config=0;j2_profile_velocity=1.5708;j2_profile_acceleration=1.0472;"
+                "j3_profile_config=0;j3_profile_velocity=1.5708;j3_profile_acceleration=1.0472;"
+            )
+
+            self.myArm.mode = mode_arr
+            self.myArm.card.set_card_specific_options(mode_options, MAX_STRING_LENGTH)
 
     def enable_teach_mode(self):
         """Relax joints for hand-guiding and continue updating measured states."""
@@ -121,7 +158,7 @@ class QArmTicTacToe:
 
     def terminate(self):
         """Releases QArm hardware resources."""
-        # LED green (0,0,1) while done
+        # LED green (0,0,1) while doness
         self.myArm.terminate()
 
 

@@ -30,17 +30,19 @@ LOCATIONS = {
 
 if __name__ == "__main__":
     bot = QArmTicTacToe(LOCATIONS)
+    bot.victory_dance()
     # bot.move_to_xyz(bot.LOCATIONS['HOME'], grip_cmd=0, duration=3.0)
     # bot.move_to_phi(bot.LOCATIONS['CAM_PHI_POS'], grip_cmd=0, duration=3.0)
 
-    bot.pick_place_hasan("H1", 'A1')
+    # bot.pick_place_hasan("H1", 'A1')
 
-    bot.pick_place_hasan("H2", 'B3')
+    # bot.pick_place_hasan("H2", 'B3')
 
-    bot.pick_place_hasan("H3", 'C2')
+    # bot.pick_place_hasan("H3", 'C2')
     
-    bot.pick_place_hasan("H4", 'C1')
+    # bot.pick_place_hasan("H4", 'C1')
     
-    bot.pick_place_hasan("H5", 'B1')
+    # bot.pick_place_hasan("H5", 'B1')
 
     bot.terminate()
+

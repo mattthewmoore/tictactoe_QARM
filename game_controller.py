@@ -2,6 +2,7 @@ from camera import Camera
 from arm_control import QArmTicTacToe
 from tic_tac_toe_alg import TicTacToe
 import numpy as np
+import sys
 
 class Game_Controller():
    
@@ -24,6 +25,7 @@ class Game_Controller():
             'C3_PHI': [ 0.2432,  0.6897,  0.0330,  -1.0], 'C2_PHI' : [-0.0100,  0.6989,  0.0207,  -1.0],
             'C1_PHI': [-0.3000,  0.7096,  0.0269,  1.0]
         }
+
         self.cam = Camera()
         self.TTT = TicTacToe()
         self.centroids=np.zeros((9,2))
@@ -34,36 +36,190 @@ class Game_Controller():
         self.robot_piece_count = 1
         self.last_robot_move = 0
         self.last_human_move = 0
-
-        
+        self.game_start = 0
+  
     def run_game(self):
         
         while True:
+
             winner = self.TTT.winner(self.moves)
             if winner == 1:
                 print("Human Wins")
-                break
+                try:
+                    while True:
+                        val=input("Please clear the board, then press enter to continue playing, to quit enter q")
+                        if val == "":
+                                self.moves.fill(0)
+                                self.robot_piece_count = 1
+                                self.last_robot_move = 0
+                                self.last_human_move = 0
+                                self.game_start = 0
+                                break
+                        elif val =="q":
+
+                            raise KeyboardInterrupt
+                        else:
+                            continue
+                except KeyboardInterrupt:
+                    print("Game Over, Exiting...")
+                    self.bot.terminate()
+                    break
+                continue
+                
             if winner == 2:
                 print("Robot Wins")
-                break
+                self.bot.victory_dance()
+                try:
+                    while True:
+                        val=input("Please clear the board, then press enter to continue playing, to quit enter q")
+                        if val == "":
+                                self.moves.fill(0)
+                                self.robot_piece_count = 1
+                                self.last_robot_move = 0
+                                self.last_human_move = 0
+                                self.game_start = 0
+                                break
+                        elif val =="q":
+
+                            raise KeyboardInterrupt
+                        else:
+                            continue
+                except KeyboardInterrupt:
+                    print("Game Over, Exiting...")
+                    self.bot.terminate()
+                    break
+                continue
+                
             if self.TTT.is_draw(self.moves):
                 print("Draw")
-                break
-            if input("Press Enter when you finish placing your move") == "":
-                winner = self.TTT.winner(self.moves)
-                self.find_missing()
-                if winner == 1:
-                    print("Human Wins")
-                    break 
-                if self.TTT.is_draw(self.moves):
-                    print("Draw")
-                    break
-                self.last_robot_move = self.get_computer_move()
-                self.move_robot()
-                self.robot_piece_count+=1
-                
+                try:
+                    while True:
+                        val=input("Please clear the board, then press enter to continue playing, to quit enter q")
+                        if val == "":
+                                self.moves.fill(0)
+                                self.robot_piece_count = 1
+                                self.last_robot_move = 0
+                                self.last_human_move = 0
+                                self.game_start = 0
+                                break
+                        elif val =="q":
 
-        
+                            raise KeyboardInterrupt
+                        else:
+                            continue
+                except KeyboardInterrupt:
+                    print("Game Over, Exiting...")
+                    self.bot.terminate()
+                    break
+                continue
+                        
+            if self.game_start == 0:
+                if input ("Press '1' for the player to start first and '2' for the robot to start first") == '2':
+                    self.find_missing()
+                    winner = self.TTT.winner(self.moves)
+                    self.game_start +=1      
+                else:
+                    input("Press Enter when you finish placing your move") == ""
+                    winner = self.TTT.winner(self.moves)
+                    self.find_missing()
+                    self.game_start +=1
+                    if winner == 1:
+                        try:
+                            while True:
+                                val=input("Please clear the board, then press enter to continue playing, to quit enter q")
+                                if val == "":
+                                        self.moves.fill(0)
+                                        self.robot_piece_count = 1
+                                        self.last_robot_move = 0
+                                        self.last_human_move = 0
+                                        self.game_start = 0
+                                        break
+                                elif val =="q":
+
+                                    raise KeyboardInterrupt
+                                else:
+                                    continue
+                        except KeyboardInterrupt:
+                            print("Game Over, Exiting...")
+                            self.bot.terminate()
+                            break
+                        continue
+                    if self.TTT.is_draw(self.moves):
+                        print("Draw")
+                        try:
+                            while True:
+                                val=input("Please clear the board, then press enter to continue playing, to quit enter q")
+                                if val == "":
+                                        self.moves.fill(0)
+                                        self.robot_piece_count = 1
+                                        self.last_robot_move = 0
+                                        self.last_human_move = 0
+                                        self.game_start = 0
+                                        break
+                                elif val =="q":
+
+                                    raise KeyboardInterrupt
+                                else:
+                                    continue
+                        except KeyboardInterrupt:
+                            print("Game Over, Exiting...")
+                            self.bot.terminate()
+                            break
+                        continue
+            else:
+                    if input("Press Enter when you finish placing your move") == "":
+                        winner = self.TTT.winner(self.moves)
+                        self.find_missing()
+                        self.game_start +=1
+                    if winner == 1:
+                        print("Human Wins")
+                        try:
+                            while True:
+                                val=input("Please clear the board, then press enter to continue playing, to quit enter q")
+                                if val == "":
+                                        self.moves.fill(0)
+                                        self.robot_piece_count = 1
+                                        self.last_robot_move = 0
+                                        self.last_human_move = 0
+                                        self.game_start = 0
+                                        break
+                                elif val =="q":
+
+                                    raise KeyboardInterrupt
+                                else:
+                                    continue
+                        except KeyboardInterrupt:
+                            print("Game Over, Exiting...")
+                            self.bot.terminate()
+                            break
+                        continue
+                    if self.TTT.is_draw(self.moves):
+                        print("Draw")
+                        try:
+                            while True:
+                                val=input("Please clear the board, then press enter to continue playing, to quit enter q")
+                                if val == "":
+                                        self.moves.fill(0)
+                                        self.robot_piece_count = 1
+                                        self.last_robot_move = 0
+                                        self.last_human_move = 0
+                                        self.game_start = 0
+                                        break
+                                elif val =="q":
+
+                                    raise KeyboardInterrupt
+                                else:
+                                    continue
+                        except KeyboardInterrupt:
+                            print("Game Over, Exiting...")
+                            self.bot.terminate()
+                            break
+                        continue
+
+            self.last_robot_move = self.get_computer_move()
+            self.move_robot()
+            self.robot_piece_count+=1
+        sys.exit()        
     # def record_player_move(self):
     #     current_board = self.set_centroids()
     #     for i in self.board_start:
