@@ -1,5 +1,5 @@
 import cv2
-from matplotlib.pyplot import gray
+# from matplotlib.pyplot import gray
 import numpy as np
 import pyrealsense2 as rs
 # init and live feed helped bys claude
