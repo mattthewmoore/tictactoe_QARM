@@ -239,6 +239,16 @@ class Game_Controller():
         return centroids
     
     def find_missing(self):
+      '''
+        Function used to find which current cells are empty. To do this, it compares the current board centroids 
+        to the moves array, and places a 1 in the moves array for the most recent player move. 
+
+        Args:
+           None
+
+        Returns:
+           None
+        '''
         original = self.board_start
         new = self.set_centroids("green")
 
