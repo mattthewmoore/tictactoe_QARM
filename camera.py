@@ -243,6 +243,7 @@ class Camera:
         self.get
 
     def get_true_contour(self, depth, contours):
+        # Used for adding depth to the color contours, not used, however
         results=[]
         for cnt in contours:
             color_mask=np.zeros(depth.shape,dtype=np.uint8)
@@ -260,6 +261,16 @@ class Camera:
                     results.append(c)
         return results
     def order_centroid(self, centroid):
+        '''
+        Orders the centroids from top squares left to right. Although it is already in descending 
+        order in the y direction, the centroid squares all have different y values, so assuming all values are 
+        the same in the y allows for the correct order of the tic-tac-toe grids. 
+
+        Args:
+            centroid (list): list of (cx,cy) tuples of the contours 2D centroids from cv2.moments()
+        Returns:
+             np.vstack((low_row_list, middle_row_list,top_row_list)) (list): list of (cx,cy) tuples of the ordered contours 2D centroids
+        '''
         smallest=0
         largest=0
         top_row=250
@@ -297,13 +308,17 @@ class Camera:
         return np.vstack((low_row_list, middle_row_list,top_row_list))
     def stable_frame_centroids(self, color, stable_frames=10, stable_zeros=10):
         '''
-        Draws the contours and centroid of the objects of the selected color live on the camera
+        Gets a stable centroid to get the true centroids in the snapshot. If the
+        number of centroids is the same across 10 frames in a row, then it is most
+        likely the real value. 
 
         Args:
             color (String): color of object user wants ('green', 'red', 'blue')
+            stable_frames (int): set at 10 frames in arrow for a stable frame
+            stable_zeros (int): set at 10 frames in arrow for a stable frame
 
         Returns:
-            None
+             centroid (list): list of (cx,cy) tuples of the contours 2D centroids from cv2.moments()
         '''
         stable=0
         zeros=0
@@ -333,6 +348,17 @@ class Camera:
                         stable=1
                         zeros=0
     def color_on_top(self, color):
+         '''
+        Function used to get the color at the top middle frame, used to see if the top
+        middle square is occupied, since an object placed in the middle square hides
+        the top middle square centroid dot. 
+
+        Args:
+            color (String): color of object user wants ('green', 'red', 'blue')
+
+        Returns:
+            True if the color chosen exists in the top middle frame [1, 210:420]
+        '''
         for i in range(10):
             ret,frame=self.cap.read()
         if ret:
